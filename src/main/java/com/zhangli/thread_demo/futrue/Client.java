@@ -1,7 +1,12 @@
 package com.zhangli.thread_demo.futrue;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executors;
 import java.util.function.BiFunction;
+import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.function.Supplier;
 
 /**
@@ -95,8 +100,8 @@ public class Client {
 //            @Override
 //            public Object apply(List<String> strings) {
 //
-////                return strings.size();
-//                throw new RuntimeException("素材库");
+//                return strings.size();
+////                throw new RuntimeException("素材库");
 //            }
 //        });
 //
@@ -133,43 +138,43 @@ public class Client {
     // TODO 此demo执行有问题，执行顺序紊乱，未找出原因
     public static void main(String[] args) {
 
-        CompletableFuture<String> lastFuture = null;
-        for (int i = 0; i < 10; i++) {
-            CompletableFuture<String> future = CompletableFuture.supplyAsync(new Supplier<String>() {
+        System.out.println(get().size());
+    }
 
-
+    private static List<String> get() {
+        CompletableFuture<List<String>> lastFuture = null;
+        for (int i = 0; i < 100; i++) {
+            CompletableFuture<List<String>> future = CompletableFuture.supplyAsync(new Supplier<List<String>>() {
                 @Override
-                public String get() {
+                public List<String> get() {
                     try {
                         Thread.sleep(2000);
                     } catch (InterruptedException e) {
                         e.printStackTrace();
                     }
-                    return "scuc" + inc();
+                    ArrayList<String> strings = new ArrayList<>();
+                    strings.add("suck" + inc());
+                    return strings;
                 }
-            });
+            }, Executors.newFixedThreadPool(100));
             if (lastFuture == null) {
                 lastFuture = future;
             } else {
-                lastFuture = lastFuture.thenCombine(future, new BiFunction<String, String, String>() {
+                lastFuture = lastFuture.thenCombine(future, new BiFunction<List<String>, List<String>, List<String>>() {
                     @Override
-                    public String apply(String s, String s2) {
-                        System.out.println("s = " + s);
-                        System.out.println("s2 = " + s2);
-                        s = s2;
-
+                    public List<String> apply(List<String> s, List<String> s2) {
+                        s.addAll(s2);
                         return s;
                     }
                 });
             }
         }
         try {
-            System.out.println(lastFuture.get());
+            return lastFuture.get();
         } catch (Exception e) {
             e.printStackTrace();
         }
-
-
+        return null;
     }
 
     private synchronized static int inc() {
